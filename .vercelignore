@@ -4,8 +4,6 @@ __pycache__/
 .git/
 .vscode/
 prisma_users.db
-Different Style /
-Generated Styles/
 Systematic Review images/
 *.odt
 nohup.out

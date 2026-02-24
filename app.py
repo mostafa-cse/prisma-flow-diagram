@@ -1005,6 +1005,8 @@ def _build_fig(d):
 # ── Different Styles gallery ──────────────────────────────────────────────────
 
 def _collect_style_sources():
+    if not os.path.isdir(DIFF_STYLE_DIR):
+        return []
     exts    = ("*.png", "*.jpg", "*.jpeg", "*.PNG", "*.JPG")
     sources = {}
     for entry in sorted(os.listdir(DIFF_STYLE_DIR)):
@@ -1031,6 +1033,8 @@ def _collect_style_sources():
 
 def _collect_generated_previews():
     """Return a list of dicts for every generated style preview."""
+    if not os.path.isdir(GEN_STYLE_DIR):
+        return []
     previews = []
     for idx, key in enumerate(STYLE_KEYS, 1):
         st     = DIAGRAM_STYLES[key]
@@ -1074,6 +1078,8 @@ def styles_img(filename):
     if len(parts) == 2:
         directory = os.path.join(DIFF_STYLE_DIR, parts[0])
         filename  = parts[1]
+    if not os.path.isdir(directory):
+        return "", 404
     return send_from_directory(directory, filename)
 
 
@@ -1086,6 +1092,8 @@ def gen_style_img(filename):
     if len(parts) == 2:
         directory = os.path.join(GEN_STYLE_DIR, parts[0])
         filename  = parts[1]
+    if not os.path.isdir(directory):
+        return "", 404
     return send_from_directory(directory, filename)
 
 
