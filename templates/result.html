@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>"/>
+  <title>PRISMA Diagram — Result</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      min-height: 100vh;
+      padding: 70px 16px 30px;
+      color: #1a3a5c;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #1a3a5c;
+    }
+    header p {
+      margin-top: 6px;
+      color: #5a7fa0;
+      font-size: 0.93rem;
+    }
+
+    /* ── Diagram card ── */
+    .diagram-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(26, 58, 92, 0.12);
+      padding: 28px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .diagram-card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #e0edf7;
+    }
+    .diagram-caption {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      font-style: italic;
+      color: #6a8faa;
+    }
+
+    /* ── Action buttons ── */
+    .actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1a6fa0, #1a3a5c);
+      color: white;
+    }
+    .btn-secondary {
+      background: white;
+      color: #1a6fa0;
+      border: 2px solid #1a6fa0;
+    }
+    .btn-pdf {
+      background: linear-gradient(135deg, #c0392b, #8e1a12);
+      color: white;
+    }
+    .btn:hover { opacity: 0.88; }
+
+    /* ── Stats summary ── */
+    .stats-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(26, 58, 92, 0.08);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+    .stats-card h2 {
+      font-size: 1rem;
+      color: #1a6fa0;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e0f0ff;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+    }
+    .stat-item {
+      background: #f0f8ff;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-item .val {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #1a6fa0;
+    }
+    .stat-item .lbl {
+      font-size: 0.75rem;
+      color: #5a7fa0;
+      margin-top: 4px;
+    }
+
+    /* ── Download form ── */
+    .download-form { display: inline; }
+
+    @media (max-width: 540px) {
+      .btn { padding: 10px 16px; font-size: 0.87rem; }
+      header h1 { font-size: 1.4rem; }
+    }
+    /* ── Top nav ── */
+    .top-nav { background:#1a3a5c; border-radius:0; box-shadow:0 2px 10px rgba(26,58,92,0.22); width:100vw; position:fixed; top:0; left:0; right:0; z-index:1000; }
+    .nav-inner { display:flex; align-items:center; justify-content:space-between; padding:10px 24px; flex-wrap:wrap; gap:8px; max-width:1200px; margin-left:auto; margin-right:auto; }
+    .nav-brand { font-size:1.05rem; font-weight:800; color:white; }
+    .nav-links { display:flex; gap:4px; flex-wrap:wrap; }
+    .nav-links a { color:#a0c8e8; text-decoration:none; padding:6px 13px; border-radius:7px; font-size:0.84rem; font-weight:600; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:rgba(255,255,255,0.13); color:white; }
+    .nav-user { display:flex; align-items:center; gap:10px; font-size:0.84rem; }
+    .nav-user span { color:#a0c8e8; font-weight:600; }
+    .nav-user a { color:white; text-decoration:none; background:rgba(255,255,255,0.15); padding:5px 13px; border-radius:7px; font-size:0.82rem; font-weight:600; transition:background 0.15s; }
+    .nav-user a:hover { background:rgba(255,255,255,0.26); }
+    /* ── Saved notice ── */
+    .saved-notice { background:#eafaf1; border:1.5px solid #27ae60; color:#1a6a3a; border-radius:10px; padding:12px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.9rem; }
+    .saved-notice strong { font-weight:700; }
+    .saved-notice a { color:#1a6fa0; font-weight:700; text-decoration:none; border:1.5px solid #1a6fa0; padding:5px 13px; border-radius:7px; font-size:0.83rem; }
+    .saved-notice a:hover { background:#f0f8ff; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav bar ── -->
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <span class="nav-brand">🔬 PRISMA</span>
+      <div class="nav-links">
+        <a href="/">Generator</a>
+        <a href="/my-diagrams">My Diagrams</a>
+        <a href="/styles">Styles</a>
+      </div>
+      <div class="nav-user">
+        <span>👤 {{ session.username }}</span>
+        <a href="/logout">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+<div class="container">
+
+  <header>
+    <h1>Your PRISMA Diagram is Ready</h1>
+    <p>Publication-ready PRISMA 2020 flow diagram — Page et al. (2021)</p>
+  </header>
+
+  {% if saved_title %}
+  <div class="saved-notice">
+    <span><strong>Saved to your gallery:</strong> {{ saved_title }}</span>
+    <a href="/my-diagrams">View My Diagrams →</a>
+  </div>
+  {% endif %}
+
+  <!-- ── Action buttons ── -->
+  <div class="actions">
+    <!-- Edit Values: POST all data back so the form is pre-filled -->
+    <form class="download-form" action="/edit" method="POST">
+      {% for key, value in data.items() %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}"/>
+      {% endfor %}
+      <button type="submit" class="btn btn-secondary">← Edit Values</button>
+    </form>
+
+    <!-- Download PNG -->
+    <form class="download-form" action="/download" method="POST">
+      {% for key, value in data.items() %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}"/>
+      {% endfor %}
+      <input type="hidden" name="format" value="png"/>
+      <button type="submit" class="btn btn-primary">⬇ Download PNG</button>
+    </form>
+
+    <!-- Download PDF -->
+    <form class="download-form" action="/download" method="POST">
+      {% for key, value in data.items() %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}"/>
+      {% endfor %}
+      <input type="hidden" name="format" value="pdf"/>
+      <button type="submit" class="btn btn-pdf">⬇ Download PDF</button>
+    </form>
+  </div>
+
+  <!-- ── Stats summary ── -->
+  <div class="stats-card">
+    <h2>📊 Screening Summary</h2>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="val">{{ data.total_identified }}</div>
+        <div class="lbl">Records Identified</div>
+      </div>
+      <div class="stat-item">
+        <div class="val">{{ data.duplicates }}</div>
+        <div class="lbl">Duplicates Removed</div>
+      </div>
+      <div class="stat-item">
+        <div class="val">{{ data.screened }}</div>
+        <div class="lbl">Screened</div>
+      </div>
+      <div class="stat-item">
+        <div class="val">{{ data.eligibility }}</div>
+        <div class="lbl">Full-Text Assessed</div>
+      </div>
+      <div class="stat-item">
+        <div class="val" style="color:#1a8a4a;">{{ data.included }}</div>
+        <div class="lbl">Studies Included</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Diagram ── -->
+  <div class="diagram-card">
+    <img src="data:image/png;base64,{{ img }}" alt="PRISMA 2020 Flow Diagram"/>
+    <div class="diagram-caption">
+      Fig. 1. Flow diagram of data collection adopted from Page et al. (2021).
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

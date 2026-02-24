@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>"/>
+  <title>Different Styles — Systematic Review</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      min-height: 100vh;
+      padding: 70px 16px 30px;
+      color: #1a2a3c;
+      overflow-x: hidden;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 2rem; font-weight: 800; color: #1a3a5c; }
+    header p  { margin-top: 8px; color: #4a6a8a; font-size: 0.95rem; }
+
+    .badge-count {
+      display: inline-block;
+      background: #1a6fa0;
+      color: white;
+      font-size: 0.75rem;
+      padding: 3px 11px;
+      border-radius: 20px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-back  { background: white; color: #1a6fa0; border: 2px solid #1a6fa0; }
+    .btn-back:hover { opacity: 0.85; }
+
+    /* Source cards */
+    .source-section {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 3px 18px rgba(26,58,92,0.09);
+      padding: 22px 24px;
+      margin-bottom: 28px;
+    }
+
+    .source-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #d8e8f4;
+      flex-wrap: wrap;
+    }
+    .use-style-btn {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 6px;
+      color: white; text-decoration: none;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 700;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .use-style-btn:hover { opacity: 0.85; transform: scale(1.03); }
+    .source-label {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #1a5a8a;
+    }
+    .source-count {
+      font-size: 0.77rem;
+      color: #8aaac0;
+      font-weight: 600;
+    }
+
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .img-card {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(26,58,92,0.10);
+      cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+      background: #f4f8fc;
+    }
+    .img-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 22px rgba(26,58,92,0.18);
+    }
+    .preview-card:hover {
+      transform: translateY(-4px) !important;
+      box-shadow: 0 8px 28px rgba(26,58,92,0.22) !important;
+    }
+    .img-card img {
+      width: 100%;
+      height: 175px;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+      border-bottom: 1px solid #d0e0f0;
+    }
+    .img-card .img-label {
+      padding: 7px 12px;
+      font-size: 0.73rem;
+      color: #5a7a9a;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Lightbox */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 15, 30, 0.94);
+      z-index: 1000;
+      flex-direction: column;
+    }
+    #lightbox.open { display: flex; }
+
+    /* Zoom viewport */
+    .lb-viewport {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lb-viewport.grabbing { cursor: grabbing; }
+    .lb-viewport img {
+      transform-origin: 0 0;
+      border-radius: 6px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    /* Bottom bar */
+    .lb-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.45);
+      flex-wrap: wrap;
+    }
+    .lb-btn {
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .lb-btn:hover { background: rgba(255,255,255,0.24); }
+    .lb-caption {
+      color: rgba(255,255,255,0.65);
+      font-size: 0.8rem;
+      min-width: 140px;
+      text-align: center;
+    }
+    .lb-source-badge {
+      display: inline-block;
+      background: #1a6fa0;
+      color: white;
+      font-size: 0.72rem;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-top: 4px;
+    }
+    .lb-zoom-badge {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.72rem;
+      font-weight: 600;
+      min-width: 48px;
+      text-align: center;
+    }
+    .lb-close {
+      position: fixed; top: 14px; right: 18px;
+      background: rgba(255,255,255,0.12);
+      color: white; border: none; border-radius: 50%;
+      width: 38px; height: 38px; font-size: 1.2rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 1002;
+    }
+    .lb-close:hover { background: rgba(255,255,255,0.28); }
+
+    /* Zoom hint overlay */
+    .lb-zoom-hint {
+      position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.7);
+      padding: 6px 16px; border-radius: 8px; font-size: 0.78rem;
+      pointer-events: none; transition: opacity 0.4s; z-index: 1001;
+    }
+
+    @media (max-width: 540px) {
+      .img-grid { grid-template-columns: 1fr 1fr; }
+      header h1 { font-size: 1.5rem; }
+    }
+    /* ── Top nav ── */
+    .top-nav { background:#1a3a5c; border-radius:0; box-shadow:0 2px 10px rgba(26,58,92,0.22); width:100vw; position:fixed; top:0; left:0; right:0; z-index:1000; }
+    .nav-inner { display:flex; align-items:center; justify-content:space-between; padding:10px 18px; flex-wrap:wrap; gap:8px; }
+    .nav-brand { font-size:1.05rem; font-weight:800; color:white; }
+    .nav-links { display:flex; gap:4px; flex-wrap:wrap; }
+    .nav-links a { color:#a0c8e8; text-decoration:none; padding:6px 13px; border-radius:7px; font-size:0.84rem; font-weight:600; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:rgba(255,255,255,0.13); color:white; }
+    .nav-user { display:flex; align-items:center; gap:10px; font-size:0.84rem; }
+    .nav-user span { color:#a0c8e8; font-weight:600; }
+    .nav-user a { color:white; text-decoration:none; background:rgba(255,255,255,0.15); padding:5px 13px; border-radius:7px; font-size:0.82rem; font-weight:600; transition:background 0.15s; }
+    .nav-user a:hover { background:rgba(255,255,255,0.26); }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav bar ── -->
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <span class="nav-brand">🔬 PRISMA</span>
+      <div class="nav-links">
+        <a href="/">Generator</a>
+        <a href="/my-diagrams">My Diagrams</a>
+        <a href="/styles" class="active"> Styles</a>
+      </div>
+      <div class="nav-user">
+        <span>👤 {{ session.username }}</span>
+        <a href="/logout">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+<div class="container">
+
+  <header>
+    <h1> Different Styles</h1>
+    <p>
+      Reference PRISMA diagram styles from various sources
+      <span class="badge-count">{{ nsources }} sources · {{ total }} images</span>
+    </p>
+  </header>
+
+  <div class="toolbar">
+  </div>
+
+  <!-- ── Generated Style Previews ── -->
+  {% if previews %}
+  <div class="source-section" style="border:2px solid #1a6fa0;background:#f4f8ff;">
+    <div class="source-header" style="border-bottom-color:#b0d0e8;">
+      <span class="source-label" style="font-size:1.15rem;color:#1a3a5c;">
+        Generated PRISMA Diagrams — All {{ previews|length }} Styles
+      </span>
+      <span class="source-count">Click any preview to use that style</span>
+    </div>
+    <div class="img-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;">
+      {% for p in previews %}
+      <a href="/?style={{ p.key }}" class="preview-card" style="text-decoration:none;display:block;border-radius:12px;overflow:hidden;box-shadow:0 3px 16px rgba(26,58,92,0.13);transition:transform 0.18s,box-shadow 0.18s;background:white;">
+        <img src="/gen-style-img/{{ p.img | urlencode }}"
+             alt="{{ p.name }}"
+             style="width:100%;height:210px;object-fit:cover;object-position:top;display:block;border-bottom:3px solid {{ p.color }};"
+             loading="lazy"/>
+        <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-weight:700;font-size:0.9rem;color:#1a3a5c;">{{ p.name }}</span>
+          <span style="background:{{ p.color }};color:white;font-size:0.72rem;padding:3px 12px;border-radius:20px;font-weight:700;">Use</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="text-align:center;margin:28px 0 10px;color:#7a9aaa;font-size:0.88rem;font-weight:600;letter-spacing:0.5px;">
+    ─── Reference Styles from Various Sources ───
+  </div>
+  {% endif %}
+
+  {% for src in sources %}
+  <div class="source-section">
+    <div class="source-header">
+      <span class="source-label">{{ src.label }}</span>
+      <span class="source-count">{{ src.images | length }} image{% if src.images | length != 1 %}s{% endif %}</span>
+      <a href="/?style={{ src.theme }}" class="use-style-btn"
+         style="background:{{ src.theme_color }};">
+         Use This
+      </a>
+    </div>
+    <div class="img-grid">
+      {% for img in src.images %}
+      <div class="img-card"
+           data-src="{{ img | replace('\\', '/') }}"
+           data-theme="{{ src.theme }}"
+           data-source="{{ src.label }}"
+           data-name="{{ img.split('/')[-1] }}">
+        <img src="/styles-img/{{ img | replace('\\', '/') | urlencode }}"
+             alt="{{ img.split('/')[-1] }}"
+             loading="lazy"/>
+        <div class="img-label">{{ img.split('/')[-1] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button class="lb-close" onclick="closeLb()">✕</button>
+  <div class="lb-viewport" id="lb-viewport">
+    <img id="lb-img" src="" alt=""/>
+    <div class="lb-zoom-hint" id="lb-hint">Scroll to zoom · Drag to pan · Double-click to reset</div>
+  </div>
+  <div class="lb-bar">
+    <button class="lb-btn" onclick="lbNav(-1)">‹ Prev</button>
+    <button class="lb-btn" onclick="zoomBy(-0.25)">− Zoom Out</button>
+    <span class="lb-zoom-badge" id="lb-zoom-pct">100%</span>
+    <button class="lb-btn" onclick="zoomBy(+0.25)">+ Zoom In</button>
+    <button class="lb-btn" onclick="resetZoom()">⟲ Fit</button>
+    <button class="lb-btn" onclick="lbNav(1)">Next ›</button>
+    <div class="lb-caption">
+      <div id="lb-name"></div>
+      <span class="lb-source-badge" id="lb-source"></span>
+    </div>
+    <a id="lb-use-btn" href="#"
+       style="background:#1a6fa0;color:white;text-decoration:none;padding:7px 16px;
+              border-radius:8px;font-size:0.85rem;font-weight:700;border:none;
+              display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+       Use This Style
+    </a>
+  </div>
+</div>
+
+<script>
+/* ── Card list ── */
+const allCards = Array.from(document.querySelectorAll('.img-card'));
+let lbIdx = 0;
+
+allCards.forEach((card, i) => {
+  card.addEventListener('click', () => {
+    lbIdx = i;
+    openLb();
+  });
+});
+
+/* ── Lightbox open / close ── */
+function openLb() {
+  renderLb();
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // show hint briefly
+  const hint = document.getElementById('lb-hint');
+  hint.style.opacity = '1';
+  clearTimeout(hint._t);
+  hint._t = setTimeout(() => hint.style.opacity = '0', 2500);
+}
+function closeLb() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function renderLb() {
+  const card   = allCards[lbIdx];
+  const src    = card.dataset.src;
+  const source = card.dataset.source;
+  const name   = card.dataset.name;
+  const theme  = card.dataset.theme || 'classic';
+  const img    = document.getElementById('lb-img');
+  img.src = '/styles-img/' + encodeURIComponent(src).replace(/%2F/g, '/');
+  document.getElementById('lb-name').textContent  = `${lbIdx+1} / ${allCards.length}  —  ${name}`;
+  document.getElementById('lb-source').textContent = source;
+  document.getElementById('lb-use-btn').href = '/?style=' + theme;
+  // reset zoom when switching images
+  img.onload = () => resetZoom();
+}
+function lbNav(dir) {
+  lbIdx = (lbIdx + dir + allCards.length) % allCards.length;
+  renderLb();
+}
+
+/* ── Zoom & Pan state ── */
+let scale = 1, tx = 0, ty = 0;
+const MIN_S = 0.5, MAX_S = 6;
+
+function applyTransform() {
+  const img = document.getElementById('lb-img');
+  img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  document.getElementById('lb-zoom-pct').textContent = Math.round(scale * 100) + '%';
+}
+
+function resetZoom() {
+  const vp  = document.getElementById('lb-viewport');
+  const img = document.getElementById('lb-img');
+  if (!img.naturalWidth) { scale = 1; tx = 0; ty = 0; applyTransform(); return; }
+  const vw = vp.clientWidth, vh = vp.clientHeight;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  scale = Math.min(vw / iw, vh / ih, 1);  // fit, never exceed 100%
+  tx = (vw - iw * scale) / 2;
+  ty = (vh - ih * scale) / 2;
+  applyTransform();
+}
+
+function zoomBy(delta) {
+  const vp = document.getElementById('lb-viewport');
+  const cx = vp.clientWidth / 2, cy = vp.clientHeight / 2;
+  zoomAt(cx, cy, delta);
+}
+
+function zoomAt(cx, cy, delta) {
+  const prev = scale;
+  scale = Math.min(MAX_S, Math.max(MIN_S, scale + delta));
+  const ratio = scale / prev;
+  tx = cx - (cx - tx) * ratio;
+  ty = cy - (cy - ty) * ratio;
+  applyTransform();
+}
+
+/* ── Mouse wheel zoom ── */
+document.getElementById('lb-viewport').addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = e.currentTarget.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const delta = e.deltaY < 0 ? 0.15 : -0.15;
+  zoomAt(cx, cy, delta * Math.max(1, scale * 0.5));
+}, { passive: false });
+
+/* ── Mouse drag pan ── */
+(function() {
+  const vp = document.getElementById('lb-viewport');
+  let dragging = false, sx, sy, stx, sty;
+  vp.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    dragging = true; sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+    vp.classList.add('grabbing');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    tx = stx + (e.clientX - sx);
+    ty = sty + (e.clientY - sy);
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+    document.getElementById('lb-viewport').classList.remove('grabbing');
+  });
+  // double-click to reset
+  vp.addEventListener('dblclick', () => resetZoom());
+})();
+
+/* ── Touch pinch zoom + pan ── */
+(function() {
+  const vp = document.getElementById('lb-viewport');
+  let lastDist = 0, lastMid = null, lastTouches = null;
+  function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
+  function mid(a, b) { return { x: (a.clientX+b.clientX)/2, y: (a.clientY+b.clientY)/2 }; }
+  vp.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      lastDist = dist(e.touches[0], e.touches[1]);
+      lastMid  = mid(e.touches[0], e.touches[1]);
+    }
+    lastTouches = e.touches;
+  }, { passive: false });
+  vp.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const d = dist(e.touches[0], e.touches[1]);
+      const m = mid(e.touches[0], e.touches[1]);
+      const rect = vp.getBoundingClientRect();
+      const cx = m.x - rect.left, cy = m.y - rect.top;
+      const delta = (d - lastDist) * 0.008;
+      zoomAt(cx, cy, delta);
+      lastDist = d; lastMid = m;
+    } else if (e.touches.length === 1 && lastTouches && lastTouches.length === 1) {
+      const dx = e.touches[0].clientX - lastTouches[0].clientX;
+      const dy = e.touches[0].clientY - lastTouches[0].clientY;
+      tx += dx; ty += dy;
+      applyTransform();
+    }
+    lastTouches = e.touches;
+  }, { passive: false });
+  vp.addEventListener('touchend', e => { lastTouches = e.touches; });
+})();
+
+/* ── Keyboard shortcuts ── */
+document.addEventListener('keydown', e => {
+  const lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft')  lbNav(-1);
+  if (e.key === 'ArrowRight') lbNav(1);
+  if (e.key === 'Escape')     closeLb();
+  if (e.key === '+' || e.key === '=') zoomBy(0.25);
+  if (e.key === '-')                  zoomBy(-0.25);
+  if (e.key === '0')                  resetZoom();
+});
+</script>
+</body>
+</html>

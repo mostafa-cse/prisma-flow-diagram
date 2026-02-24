@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>"/>
+  <title>Sign Up — PRISMA Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #1a3a5c;
+    }
+
+    .auth-wrap {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .brand-bar {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand-bar .icon { font-size: 3.2rem; display: block; margin-bottom: 8px; }
+    .brand-bar h1   { font-size: 1.9rem; font-weight: 800; color: #1a3a5c; }
+    .brand-bar p    { color: #5a7fa0; font-size: 0.9rem; margin-top: 5px; }
+
+    .auth-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(26,58,92,0.14);
+      padding: 40px 36px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a6fa0;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e0f0ff;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #2c5a7a;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #c8dff0;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      color: #1a3a5c;
+      background: #f8fbff;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #1a6fa0;
+      background: white;
+    }
+    .field-hint {
+      font-size: 0.74rem;
+      color: #8aabb8;
+      margin-top: 4px;
+    }
+
+    .btn-auth {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #1a8a4a, #0e5c30);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
+    }
+    .btn-auth:hover  { opacity: 0.88; }
+    .btn-auth:active { transform: scale(0.98); }
+
+    .error-msg {
+      background: #fef0f0;
+      border: 1.5px solid #e74c3c;
+      color: #c0392b;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.87rem;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .divider { height: 1px; background: #e8f4fd; margin: 22px 0; }
+
+    .auth-footer {
+      text-align: center;
+      font-size: 0.87rem;
+      color: #5a7fa0;
+    }
+    .auth-footer a {
+      color: #1a6fa0;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    .password-rules {
+      background: #f0f8ff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      color: #4a7a9b;
+      margin-bottom: 16px;
+      border-left: 3px solid #1a6fa0;
+    }
+    .password-rules li { margin-left: 16px; margin-top: 2px; }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+
+  <div class="brand-bar">
+    <span class="icon">🔬</span>
+    <h1>PRISMA Generator</h1>
+    <p>Create your free account</p>
+  </div>
+
+  <div class="auth-card">
+    <div class="card-title">✨ Create Account</div>
+
+    {% if error %}
+    <div class="error-msg">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form action="/signup" method="POST">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Choose a username"
+               required autocomplete="username" minlength="3"/>
+        <div class="field-hint">At least 3 characters</div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="you@example.com"
+               required autocomplete="email"/>
+      </div>
+
+      <div class="password-rules">
+        <strong>Password requirements:</strong>
+        <ul>
+          <li>Minimum 6 characters</li>
+          <li>Both entries must match</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Create a password"
+               required autocomplete="new-password" minlength="6"/>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" name="confirm" placeholder="Repeat your password"
+               required autocomplete="new-password"/>
+      </div>
+
+      <button type="submit" class="btn-auth">Create Account →</button>
+    </form>
+
+    <div class="divider"></div>
+    <div class="auth-footer">
+      Already have an account? <a href="/login">Sign in →</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

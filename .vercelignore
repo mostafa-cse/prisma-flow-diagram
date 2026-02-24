@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+prisma_users.db
+Different Style /
+Generated Styles/
+Systematic Review images/
+*.odt
+.vscode/
+/tmp/
+nohup.out

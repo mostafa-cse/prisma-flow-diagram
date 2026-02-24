@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>"/>
+  <title>My Diagrams — PRISMA Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      min-height: 100vh;
+      padding: 70px 16px 30px;
+      color: #1a3a5c;
+      overflow-x: hidden;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    /* ── Nav bar ── */
+    .top-nav {
+      background: #1a3a5c;
+      border-radius: 0;
+      box-shadow: 0 2px 10px rgba(26,58,92,0.22);
+      width: 100vw;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+    .nav-inner {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px; flex-wrap: wrap; gap: 8px;
+      max-width: 1200px; margin-left: auto; margin-right: auto;
+    }
+    .nav-brand { font-size: 1.05rem; font-weight: 800; color: white; }
+    .nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+    .nav-links a {
+      color: #a0c8e8; text-decoration: none;
+      padding: 6px 13px; border-radius: 7px;
+      font-size: 0.84rem; font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      background: rgba(255,255,255,0.13); color: white;
+    }
+    .nav-user { display: flex; align-items: center; gap: 10px; font-size: 0.84rem; }
+    .nav-user span { color: #a0c8e8; font-weight: 600; }
+    .nav-user a {
+      color: white; text-decoration: none;
+      background: rgba(255,255,255,0.15); padding: 5px 13px;
+      border-radius: 7px; font-size: 0.82rem; font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-user a:hover { background: rgba(255,255,255,0.26); }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 30px; }
+    header h1 { font-size: 1.9rem; font-weight: 800; color: #1a3a5c; }
+    header p  { margin-top: 7px; color: #5a7fa0; font-size: 0.94rem; }
+
+    .badge-count {
+      display: inline-block; background: #1a6fa0; color: white;
+      font-size: 0.75rem; padding: 3px 11px; border-radius: 20px;
+      margin-left: 8px; vertical-align: middle;
+    }
+
+    .toolbar {
+      display: flex; justify-content: center; gap: 12px;
+      flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 20px; border-radius: 9px; font-size: 0.9rem;
+      font-weight: 700; cursor: pointer; border: none;
+      text-decoration: none; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary  { background: linear-gradient(135deg,#1a6fa0,#1a3a5c); color: white; }
+    .btn-back     { background: white; color: #1a6fa0; border: 2px solid #1a6fa0; }
+    .btn-primary:hover, .btn-back:hover { opacity: 0.85; }
+
+    /* ── Diagram grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .diagram-card {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 3px 16px rgba(26,58,92,0.10);
+      overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .diagram-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(26,58,92,0.17);
+    }
+
+    .diagram-thumb {
+      width: 100%; aspect-ratio: 6/7;
+      object-fit: cover; object-position: top;
+      display: block; cursor: pointer;
+      background: #f0f8ff;
+    }
+
+    .diagram-info {
+      padding: 14px 16px 12px;
+    }
+    .diagram-title {
+      font-size: 0.88rem; font-weight: 700;
+      color: #1a3a5c; margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .diagram-date {
+      font-size: 0.76rem; color: #8aabb8; margin-bottom: 12px;
+    }
+    .diagram-actions {
+      display: flex; gap: 8px;
+    }
+    .btn-view {
+      flex: 1; padding: 8px; background: #1a6fa0; color: white;
+      border: none; border-radius: 7px; font-size: 0.82rem;
+      font-weight: 700; cursor: pointer; text-align: center;
+      text-decoration: none; transition: opacity 0.2s;
+    }
+    .btn-view:hover { opacity: 0.85; }
+    .btn-delete {
+      padding: 8px 12px; background: #fef0f0; color: #c0392b;
+      border: 1.5px solid #f5c6c6; border-radius: 7px;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-delete:hover { background: #fddede; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 80px 20px;
+      background: white; border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(26,58,92,0.08);
+    }
+    .empty-icon { font-size: 4rem; margin-bottom: 16px; }
+    .empty-state h2 { font-size: 1.3rem; color: #1a3a5c; margin-bottom: 10px; }
+    .empty-state p  { color: #5a7fa0; font-size: 0.92rem; margin-bottom: 24px; }
+
+    @media (max-width: 540px) {
+      .grid { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav bar ── -->
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <span class="nav-brand">🔬 PRISMA</span>
+      <div class="nav-links">
+        <a href="/">Generator</a>
+        <a href="/my-diagrams" class="active">My Diagrams</a>
+        <a href="/styles">Styles</a>
+      </div>
+      <div class="nav-user">
+        <span>👤 {{ session.username }}</span>
+        <a href="/logout">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+<div class="container">
+
+  <!-- ── Header ── -->
+  <header>
+    <h1>📁 My PRISMA Diagrams
+      {% if diagrams %}
+      <span class="badge-count">{{ diagrams|length }}</span>
+      {% endif %}
+    </h1>
+    <p>All diagrams you have generated — click to view or re-edit any previous result.</p>
+  </header>
+
+  <div class="toolbar">
+    <a href="/" class="btn btn-primary">➕ Generate New Diagram</a>
+  </div>
+
+  {% if diagrams %}
+  <div class="grid">
+    {% for row in diagrams %}
+    <div class="diagram-card">
+      <a href="/my-diagrams/{{ row.id }}">
+        <img class="diagram-thumb"
+             src="/my-diagrams/{{ row.id }}/img"
+             alt="{{ row.title }}"
+             loading="lazy"/>
+      </a>
+      <div class="diagram-info">
+        <div class="diagram-title">{{ row.title }}</div>
+        <div class="diagram-date">{{ row.created_at }}</div>
+        <div class="diagram-actions">
+          <a href="/my-diagrams/{{ row.id }}" class="btn-view">👁 View</a>
+          <form action="/delete-diagram/{{ row.id }}" method="POST"
+                onsubmit="return confirm('Delete this diagram?')">
+            <button type="submit" class="btn-delete">🗑</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"></div>
+    <h2>No diagrams yet</h2>
+    <p>Generate your first PRISMA 2020 flow diagram — it will be saved here automatically.</p>
+    <a href="/" class="btn btn-primary">➕ Generate Your First Diagram</a>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>

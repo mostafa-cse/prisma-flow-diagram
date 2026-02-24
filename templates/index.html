@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>"/>
+  <title>PRISMA Diagram Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+      min-height: 100vh; padding: 70px 16px 30px; color: #1a3a5c;
+      overflow-x: hidden;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 { font-size: 2rem; font-weight: 800; color: #1a3a5c; letter-spacing: -0.5px; }
+    header p  { margin-top: 8px; color: #5a7fa0; font-size: 0.97rem; }
+    .badge {
+      display: inline-block; background: #1a6fa0; color: white;
+      font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; margin-top: 10px;
+    }
+
+    .card {
+      background: white; border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(26,58,92,0.10);
+      padding: 28px 32px; margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1.05rem; font-weight: 700; color: #1a6fa0;
+      margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e0f0ff;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card h2 .step-num {
+      background: #1a6fa0; color: white; border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; flex-shrink: 0;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.83rem; font-weight: 600; color: #2c5a7a; }
+    .label-hint { font-weight: 400; color: #5a7fa0; font-size: 0.75rem; }
+
+    input[type="text"], input[type="number"] {
+      border: 1.5px solid #c8dff0; border-radius: 8px;
+      padding: 8px 12px; font-size: 0.92rem; color: #1a3a5c;
+      transition: border 0.2s, background 0.2s;
+      background: #f8fbff; width: 100%;
+    }
+    input:focus { outline: none; border-color: #1a6fa0; background: white; }
+    input[readonly] { cursor: default; }
+
+    /* auto (computed) field */
+    .auto-wrap { position: relative; }
+    .auto-wrap input {
+      background: #e6f4ff !important; border-color: #1a6fa0 !important;
+      font-weight: 700; font-size: 1rem; color: #1a3a5c; padding-right: 36px;
+    }
+    .auto-wrap .sym {
+      position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+      font-size: 0.78rem; color: #1a6fa0; font-weight: 700; pointer-events: none;
+    }
+    .auto-wrap.flash input { background: #bde0f8 !important; }
+
+    .calc-hint { font-size: 0.75rem; color: #5a8faa; margin-top: 3px; font-style: italic; }
+
+    /* validation */
+    .field-warn { font-size: 0.74rem; color: #c0392b; font-weight: 600; margin-top: 3px; display: none; }
+    .field-warn.show { display: block; }
+    input.invalid { border-color: #e74c3c !important; background: #fff8f8 !important; }
+
+    /* balance hint bar */
+    .balance-bar {
+      margin-top: 14px; padding: 9px 14px; border-radius: 8px;
+      font-size: 0.81rem; font-weight: 600;
+      background: #f0f8ff; border-left: 3px solid #1a6fa0; color: #2c5a7a;
+    }
+    .balance-bar.ok    { border-color: #27ae60; background: #f0faf4; color: #1a6a38; }
+    .balance-bar.warn  { border-color: #e67e22; background: #fff8f0; color: #a05000; }
+    .balance-bar.error { border-color: #e74c3c; background: #fff5f5; color: #a01020; }
+
+    .sub-label {
+      font-size: 0.77rem; color: #8ab0cc; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 10px;
+    }
+
+    /* dynamic rows */
+    .db-row, .reason-row {
+      display: grid; grid-template-columns: 2.5fr 1fr auto;
+      gap: 10px; align-items: end; margin-bottom: 10px;
+    }
+
+    .add-btn {
+      border: none; cursor: pointer; border-radius: 8px;
+      padding: 8px 16px; font-size: 0.85rem; font-weight: 700;
+      background: #e0f0ff; color: #1a6fa0; margin-top: 12px;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    .add-btn:hover:not(:disabled) { background: #c8e4f8; }
+    .add-btn:disabled { opacity: 0.4; cursor: not-allowed; background: #ebebeb; color: #aaa; }
+
+    .remove-btn {
+      border: none; cursor: pointer; border-radius: 8px;
+      width: 34px; height: 34px; background: #fff0f0; color: #c0392b;
+      font-size: 1.1rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      align-self: end; transition: background 0.2s, transform 0.1s; flex-shrink: 0;
+    }
+    .remove-btn:hover  { background: #ffd5d5; }
+    .remove-btn:active { transform: scale(0.93); }
+    .remove-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    .total-box { background: #eaf4ff; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; }
+
+    /* final included box */
+    .included-box {
+      background: #eafaf1; border-radius: 12px;
+      padding: 18px 20px; border: 2px solid #27ae60;
+    }
+    .included-box .auto-wrap input {
+      border-color: #27ae60 !important;
+      font-size: 1.4rem !important; text-align: center;
+      color: #1a6a38 !important;
+    }
+    .included-box .sym { color: #27ae60 !important; }
+    .included-box label { color: #1a6a38; font-size: 0.9rem; }
+
+    .btn-generate {
+      width: 100%; background: linear-gradient(135deg, #1a6fa0, #1a3a5c);
+      color: white; border: none; border-radius: 12px;
+      padding: 15px; font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s; margin-top: 8px;
+    }
+    .btn-generate:hover  { opacity: 0.92; }
+    .btn-generate:active { transform: scale(0.99); }
+
+    @media (max-width: 580px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .card { padding: 20px 16px; }
+      header h1 { font-size: 1.5rem; }
+    }
+    /* ── Top nav ── */
+    .top-nav { background:#1a3a5c; border-radius:0; box-shadow:0 2px 10px rgba(26,58,92,0.22); width:100vw; position:fixed; top:0; left:0; right:0; z-index:1000; }
+    .nav-inner { display:flex; align-items:center; justify-content:space-between; padding:10px 24px; flex-wrap:wrap; gap:8px; max-width:1200px; margin-left:auto; margin-right:auto; }
+    .nav-brand { font-size:1.05rem; font-weight:800; color:white; }
+    .nav-links { display:flex; gap:4px; flex-wrap:wrap; }
+    .nav-links a { color:#a0c8e8; text-decoration:none; padding:6px 13px; border-radius:7px; font-size:0.84rem; font-weight:600; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:rgba(255,255,255,0.13); color:white; }
+    .nav-user { display:flex; align-items:center; gap:10px; font-size:0.84rem; }
+    .nav-user span { color:#a0c8e8; font-weight:600; }
+    .nav-user a { color:white; text-decoration:none; background:rgba(255,255,255,0.15); padding:5px 13px; border-radius:7px; font-size:0.82rem; font-weight:600; transition:background 0.15s; }
+    .nav-user a:hover { background:rgba(255,255,255,0.26); }
+
+    /* ── Style banner ── */
+    .style-banner {
+      margin-bottom: 18px;
+      background: #f0f8ff;
+      border: 1.5px solid #1a6fa0;
+      border-radius: 10px;
+      padding: 10px 18px;
+    }
+    .style-banner-inner {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      font-size: 0.9rem; color: #1a3a5c; font-weight: 600;
+    }
+    .style-swatch {
+      display: inline-block; width: 18px; height: 18px;
+      border-radius: 50%; border: 2px solid rgba(0,0,0,0.15);
+      flex-shrink: 0;
+    }
+    .style-banner-clear {
+      margin-left: auto; font-size: 0.78rem; color: #888;
+      text-decoration: none; border: 1px solid #ccc;
+      padding: 3px 10px; border-radius: 6px;
+    }
+    .style-banner-clear:hover { background: #f5f5f5; color: #555; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav bar ── -->
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <span class="nav-brand">🔬 PRISMA</span>
+      <div class="nav-links">
+        <a href="/" class="active">Generator</a>
+        <a href="/my-diagrams">My Diagrams</a>
+        <a href="/styles">Styles</a>
+      </div>
+      <div class="nav-user">
+        <span>👤 {{ session.username }}</span>
+        <a href="/logout">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+<div class="container">
+
+  <header>
+    <h1>🔬 PRISMA Diagram Generator</h1>
+    <p>Enter your systematic review data to generate a publication-ready PRISMA 2020 flow diagram.</p>
+    <span class="badge">Based on Page et al. (2021)</span>
+  </header>
+
+  <div id="style-banner" class="style-banner" style="display:none;">
+    <div id="style-banner-inner" class="style-banner-inner">
+      <span id="style-swatch" class="style-swatch"></span>
+      <img id="style-ref-img" src="" alt="Reference"
+           style="display:none;height:44px;width:70px;object-fit:cover;object-position:top;
+                  border-radius:6px;border:2px solid rgba(0,0,0,0.12);flex-shrink:0;"/>
+      <span>Generating with style from: <strong id="style-banner-name"></strong></span>
+      <a href="/clear-style" class="style-banner-clear">✕ Reset to Default</a>
+    </div>
+  </div>
+
+  <form action="/generate" method="POST" id="prismaForm">
+
+    <!-- ══════════════════════════════════════════════════════
+         STREAM A — Previous Studies  (for review updates)
+    ══════════════════════════════════════════════════════ -->
+    <div class="card" style="border-left:4px solid #6a1b9a;">
+      <h2><span class="step-num" style="background:#6a1b9a;">A</span>
+        Previous Studies <span class="label-hint">(for review updates — optional)</span>
+      </h2>
+      <div class="form-group">
+        <label>Studies included in previous version of review</label>
+        <input type="number" name="prev_included" id="prev_included"
+               value="" min="0" placeholder="n = (leave blank if not an update)"/>
+        <span class="calc-hint">These flow directly to the Total Included box</span>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         STREAM B — Databases / Registers  (main pathway)
+    ══════════════════════════════════════════════════════ -->
+    <div class="card" style="border-left:4px solid #1a6fa0;">
+      <h2><span class="step-num">B1</span> Databases / Registers — Identification</h2>
+
+      <div class="total-box">
+        <div class="form-group">
+          <label>Total Records Identified from Databases
+            <span class="label-hint"> — auto-sum of database counts below</span>
+          </label>
+          <div class="auto-wrap" id="wrap_db_identified">
+            <input type="number" name="db_identified" id="db_identified"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">Σ</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-label">Databases searched</div>
+      <div id="db-container"><!-- injected by JS --></div>
+      <button type="button" class="add-btn" id="add-db-btn" onclick="tryAddDb()">
+        ➕ Add Database
+      </button>
+    </div>
+
+    <div class="card" style="border-left:4px solid #1a6fa0;">
+      <h2><span class="step-num">B2</span> Databases — Records Removed Before Screening</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Duplicate Records Removed</label>
+          <input type="number" name="db_duplicates" id="db_duplicates"
+                 value="0" min="0" oninput="recalcAll()"/>
+          <span class="calc-hint">Records appearing in more than one database</span>
+        </div>
+        <div class="form-group">
+          <label>Excluded by Automation Tools</label>
+          <input type="number" name="db_automation_exc" id="db_automation_exc"
+                 value="" min="0" placeholder="n = (optional)"
+                 oninput="recalcAll()"/>
+          <span class="calc-hint">e.g. machine-learning pre-screening</span>
+        </div>
+        <div class="form-group">
+          <label>Removed for Other Reasons</label>
+          <input type="number" name="db_other_exc" id="db_other_exc"
+                 value="" min="0" placeholder="n = (optional)"/>
+          <span class="calc-hint">e.g. wrong language, out-of-scope</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #1a6fa0;">
+      <h2><span class="step-num">B3</span> Databases — Title &amp; Abstract Screening</h2>
+
+      <div class="total-box" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Total Records Screened
+            <span class="label-hint"> = Identified − Duplicates − Automation − Other</span>
+          </label>
+          <div class="auto-wrap" id="wrap_db_screened">
+            <input type="number" name="db_screened" id="db_screened"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">=</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-label">Reviewer agreement breakdown <span class="label-hint">(optional)</span></div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Agreed — Included</label>
+          <input type="number" name="sc_included" id="sc_included"
+                 value="" min="0" placeholder="n =" oninput="recalcAll()"/>
+        </div>
+        <div class="form-group">
+          <label>Agreed — Excluded</label>
+          <input type="number" name="sc_excluded" id="sc_excluded"
+                 value="" min="0" placeholder="n =" oninput="recalcAll()"/>
+        </div>
+        <div class="form-group">
+          <label>Conflicts (disagreements)</label>
+          <input type="number" name="conflict_total" id="conflict_total"
+                 value="" min="0" placeholder="n =" oninput="recalcAll()"/>
+        </div>
+        <div class="form-group">
+          <label>Conflicts → Included after discussion</label>
+          <input type="number" name="conflict_inc" id="conflict_inc"
+                 value="" min="0" placeholder="n =" oninput="recalcAll()"/>
+        </div>
+        <div class="form-group">
+          <label>Conflicts → Excluded after discussion <span class="label-hint">auto</span></label>
+          <div class="auto-wrap" id="wrap_conflict_exc">
+            <input type="number" name="conflict_exc" id="conflict_exc"
+                   value="" min="0" readonly tabindex="-1"/>
+            <span class="sym">=</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance bar -->
+      <div class="balance-bar" id="balance_bar">
+        Included + Excluded + Conflicts = 0 &nbsp;|&nbsp; Screened: 0
+      </div>
+
+      <div class="sub-label" style="margin-top:14px;">
+        Total excluded at screening <span class="label-hint">(PRISMA side-box)</span>
+      </div>
+      <div class="form-group">
+        <div class="auto-wrap" id="wrap_db_exc_screened">
+          <input type="number" name="db_exc_screened" id="db_exc_screened"
+                 value="0" min="0" readonly tabindex="-1"/>
+          <span class="sym">=</span>
+        </div>
+      </div>
+
+      <div class="sub-label" style="margin-top:14px;">
+        Screening EX reason codes <span class="label-hint">(optional — EX1–EX6)</span>
+      </div>
+      <div id="sc-exc-codes-container">
+        <div class="db-row" style="gap:8px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#2c5a7a;min-width:38px;">EX1</span>
+          <input type="text"   name="sc_exc_code1"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="sc_exc_code1_n" placeholder="n" min="0" style="flex:1;max-width:90px;"/>
+        </div>
+        <div class="db-row" style="gap:8px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#2c5a7a;min-width:38px;">EX2</span>
+          <input type="text"   name="sc_exc_code2"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="sc_exc_code2_n" placeholder="n" min="0" style="flex:1;max-width:90px;"/>
+        </div>
+        <div class="db-row" style="gap:8px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#2c5a7a;min-width:38px;">EX3</span>
+          <input type="text"   name="sc_exc_code3"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="sc_exc_code3_n" placeholder="n" min="0" style="flex:1;max-width:90px;"/>
+        </div>
+        <div class="db-row" style="gap:8px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#2c5a7a;min-width:38px;">EX4</span>
+          <input type="text"   name="sc_exc_code4"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="sc_exc_code4_n" placeholder="n" min="0" style="flex:1;max-width:90px;"/>
+        </div>
+        <div class="db-row" style="gap:8px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#2c5a7a;min-width:38px;">EX5</span>
+          <input type="text"   name="sc_exc_code5"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="sc_exc_code5_n" placeholder="n" min="0" style="flex:1;max-width:90px;"/>
+        </div>
+        <div class="db-row" style="gap:8px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#2c5a7a;min-width:38px;">EX6</span>
+          <input type="text"   name="sc_exc_code6"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="sc_exc_code6_n" placeholder="n" min="0" style="flex:1;max-width:90px;"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #1a6fa0;">
+      <h2><span class="step-num">B4</span> Databases — Full-Text Retrieval</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Reports Sought for Retrieval
+            <span class="label-hint"> auto</span>
+          </label>
+          <div class="auto-wrap" id="wrap_db_sought">
+            <input type="number" name="db_sought" id="db_sought"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">=</span>
+          </div>
+          <span class="calc-hint">= Screened − Excluded at screening</span>
+        </div>
+        <div class="form-group">
+          <label>Reports Not Retrieved</label>
+          <input type="number" name="db_not_retrieved" id="db_not_retrieved"
+                 value="0" min="0" oninput="recalcAll()"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #1a6fa0;">
+      <h2><span class="step-num">B5</span> Databases — Eligibility &amp; Inclusion</h2>
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Reports Assessed for Eligibility
+            <span class="label-hint"> auto</span>
+          </label>
+          <div class="auto-wrap" id="wrap_db_assessed">
+            <input type="number" name="db_assessed" id="db_assessed"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">=</span>
+          </div>
+          <span class="calc-hint">= Sought − Not Retrieved</span>
+        </div>
+        <div class="form-group">
+          <label>Total Excluded at Full-Text Stage
+            <span class="label-hint"> = Σ reasons</span>
+          </label>
+          <div class="auto-wrap" id="wrap_db_exc_fulltext">
+            <input type="number" name="db_exc_reasons_total" id="db_exc_reasons_total"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">Σ</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-label">Full-text exclusion reasons (up to 6)</div>
+      <div id="reason-container"><!-- injected by JS --></div>
+      <button type="button" class="add-btn" onclick="addReason()">
+        ➕ Add Exclusion Reason
+      </button>
+
+      <div class="included-box" style="margin-top:20px;">
+        <div class="form-group">
+          <label>Studies Included from Databases
+            <span class="label-hint"> = Assessed − Excluded at Full-Text</span>
+          </label>
+          <div class="auto-wrap" id="wrap_db_included">
+            <input type="number" name="db_included" id="db_included"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">=</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         STREAM C — Other Methods  (simplified pathway)
+    ══════════════════════════════════════════════════════ -->
+    <div class="card" style="border-left:4px solid #e65100;">
+      <h2><span class="step-num" style="background:#e65100;">C1</span>
+        Other Methods — Identification
+      </h2>
+      <div class="form-group">
+        <label>Total Records from Other Methods</label>
+        <input type="number" name="other_identified" id="other_identified"
+               value="0" min="0" oninput="recalcAll()"/>
+        <span class="calc-hint">Websites, grey literature, citation searching, registers, etc.</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #e65100;">
+      <h2><span class="step-num" style="background:#e65100;">C2</span>
+        Other Methods — Retrieval &amp; Eligibility
+      </h2>
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Reports Sought for Retrieval</label>
+          <input type="number" name="other_sought" id="other_sought"
+                 value="0" min="0" oninput="recalcAll()"/>
+        </div>
+        <div class="form-group">
+          <label>Reports Not Retrieved</label>
+          <input type="number" name="other_not_retrieved" id="other_not_retrieved"
+                 value="" min="0" placeholder="n = (optional)"/>
+        </div>
+        <div class="form-group">
+          <label>Reports Assessed for Eligibility</label>
+          <input type="number" name="other_assessed" id="other_assessed"
+                 value="0" min="0" oninput="recalcAll()"/>
+        </div>
+        <div class="form-group">
+          <label>Total Excluded at Full-Text Stage
+            <span class="label-hint"> = Σ reasons below</span>
+          </label>
+          <div class="auto-wrap" id="wrap_other_exc">
+            <input type="number" name="other_exc_reasons_total" id="other_exc_reasons_total"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">Σ</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-label">Exclusion reasons — Other Methods (up to 4)</div>
+      <div id="other-reason-container">
+        <div class="db-row reason-row" style="gap:8px;margin-bottom:6px;">
+          <input type="text"   name="other_exc_reason1"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="other_exc_reason1_n" placeholder="n" min="0" style="flex:1;max-width:90px;" oninput="recalcOther()"/>
+        </div>
+        <div class="db-row reason-row" style="gap:8px;margin-bottom:6px;">
+          <input type="text"   name="other_exc_reason2"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="other_exc_reason2_n" placeholder="n" min="0" style="flex:1;max-width:90px;" oninput="recalcOther()"/>
+        </div>
+        <div class="db-row reason-row" style="gap:8px;margin-bottom:6px;">
+          <input type="text"   name="other_exc_reason3"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="other_exc_reason3_n" placeholder="n" min="0" style="flex:1;max-width:90px;" oninput="recalcOther()"/>
+        </div>
+        <div class="db-row reason-row" style="gap:8px;margin-bottom:6px;">
+          <input type="text"   name="other_exc_reason4"   placeholder="Exclusion reason" style="flex:3;"/>
+          <input type="number" name="other_exc_reason4_n" placeholder="n" min="0" style="flex:1;max-width:90px;" oninput="recalcOther()"/>
+        </div>
+      </div>
+
+      <div class="included-box" style="margin-top:20px;">
+        <div class="form-group">
+          <label>Studies Included from Other Methods
+            <span class="label-hint"> = Assessed − Excluded</span>
+          </label>
+          <div class="auto-wrap" id="wrap_other_included">
+            <input type="number" name="other_included" id="other_included"
+                   value="0" min="0" readonly tabindex="-1"/>
+            <span class="sym">=</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         FINAL — Total Included + Analysis Branches
+    ══════════════════════════════════════════════════════ -->
+    <div class="card included-box">
+      <h2><span class="step-num" style="background:#1a6fa0;">★</span>
+        Total Studies Included + Analysis Branches
+      </h2>
+      <div class="form-group">
+        <label>Total Studies Included in Review
+          <span class="label-hint"> = Prev + DB Included + Other Included</span>
+        </label>
+        <div class="auto-wrap" id="wrap_total_included">
+          <input type="number" name="total_included" id="total_included"
+                 value="0" min="0" readonly tabindex="-1"/>
+          <span class="sym">Σ</span>
+        </div>
+      </div>
+
+      <div class="sub-label" style="margin-top:18px;">
+        Analytical branches <span class="label-hint">(two boxes below Total)</span>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Analysis Branch 1 — Label</label>
+          <input type="text" name="analysis_1_text" id="analysis_1_text"
+                 value="" placeholder="e.g. Quantitative Synthesis"/>
+        </div>
+        <div class="form-group">
+          <label>Branch 1 — Study Count (n)</label>
+          <input type="number" name="analysis_1_n" id="analysis_1_n"
+                 value="" min="0" placeholder="n ="/>
+        </div>
+        <div class="form-group">
+          <label>Analysis Branch 2 — Label</label>
+          <input type="text" name="analysis_2_text" id="analysis_2_text"
+                 value="" placeholder="e.g. Bibliometric Analysis"/>
+        </div>
+        <div class="form-group">
+          <label>Branch 2 — Study Count (n)</label>
+          <input type="number" name="analysis_2_n" id="analysis_2_n"
+                 value="" min="0" placeholder="n ="/>
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" name="style" id="selected_style" value="classic"/>
+    <button type="submit" class="btn-generate">⚡ Generate PRISMA Diagram</button>
+  </form>
+
+</div>
+
+<script type="application/json" id="prefill-data">{{ prefill | tojson | safe if prefill is defined and prefill else 'null' }}</script>
+
+<script>
+// Pre-fill data injected by Flask when returning from /edit
+const PREFILL = JSON.parse(document.getElementById('prefill-data').textContent);
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════════════════════
+function gv(id) {
+  const el = document.getElementById(id);
+  return el ? (parseInt(el.value, 10) || 0) : 0;
+}
+function sv(id, v) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const n = Math.max(0, isNaN(v) ? 0 : v);
+  if (el.value !== String(n)) {
+    el.value = n;
+    const wrap = document.getElementById('wrap_' + id);
+    if (wrap) {
+      wrap.classList.add('flash');
+      setTimeout(() => wrap.classList.remove('flash'), 280);
+    }
+  }
+}
+
+// Show / hide a warning message below a field
+function setFieldWarn(id, msg) {
+  let span = document.getElementById('warn_' + id);
+  if (!span) {
+    span = document.createElement('span');
+    span.id = 'warn_' + id;
+    span.style.cssText = 'display:block;font-size:0.74rem;color:#c0392b;font-weight:600;margin-top:3px;';
+    const el = document.getElementById(id);
+    if (el) el.closest('.form-group')?.appendChild(span);
+  }
+  if (msg) {
+    span.textContent = '⚠ ' + msg;
+    span.style.display = 'block';
+    document.getElementById(id)?.classList.add('invalid');
+  } else {
+    span.textContent = '';
+    span.style.display = 'none';
+    document.getElementById(id)?.classList.remove('invalid');
+  }
+}
+
+// Clamp an editable input to [0, maxVal], return clamped value
+function clamp(id, maxVal) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  el.max = maxVal;
+  let v = parseInt(el.value, 10) || 0;
+  if (v < 0) { el.value = 0; v = 0; }
+  if (v > maxVal) { el.value = maxVal; v = maxVal; }
+  return v;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Other Methods stream recalc
+// ══════════════════════════════════════════════════════════════════════════
+function recalcOther() {
+  const assessed = gv('other_assessed');
+  let exc_other = 0;
+  for (let i = 1; i <= 4; i++) {
+    const el = document.querySelector(`[name="other_exc_reason${i}_n"]`);
+    exc_other += el ? (parseInt(el.value, 10) || 0) : 0;
+  }
+  sv('other_exc_reasons_total', exc_other);
+  sv('other_included', Math.max(0, assessed - exc_other));
+  recalcTotal();
+}
+
+function recalcTotal() {
+  const prev = gv('prev_included');
+  const db   = gv('db_included');
+  const oth  = gv('other_included');
+  sv('total_included', prev + db + oth);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Master recalculator — called on every user input
+// ══════════════════════════════════════════════════════════════════════════
+function recalcAll() {
+  // ── DB stream ─────────────────────────────────────────────────────────
+  const identified   = gv('db_identified');
+  const duplicates   = clamp('db_duplicates', identified);
+  const auto_exc     = gv('db_automation_exc');
+  const other_remove = gv('db_other_exc');
+  sv('db_screened', Math.max(0, identified - duplicates - auto_exc - other_remove));
+  const screened = gv('db_screened');
+
+  // Screened conflict breakdown
+  const conf_tot = gv('conflict_total');
+  const conf_inc = clamp('conflict_inc', conf_tot);
+  if (conf_tot > 0 && conf_inc > conf_tot) {
+    setFieldWarn('conflict_inc', `Cannot exceed Total Conflicts (${conf_tot})`);
+  } else {
+    setFieldWarn('conflict_inc', '');
+  }
+
+  const sc_inc   = gv('sc_included');
+  const sc_exc   = gv('sc_excluded');
+  const conf_exc = Math.max(0, conf_tot - conf_inc);
+  sv('conflict_exc',    conf_exc);
+  sv('db_exc_screened', sc_exc + conf_exc);
+
+  // Balance bar
+  const breakdown = sc_inc + sc_exc + conf_tot;
+  const bar = document.getElementById('balance_bar');
+  if (bar) {
+    if (screened > 0 && breakdown > screened) {
+      bar.textContent = `Over-allocated! Included ${sc_inc} + Excluded ${sc_exc} + Conflicts ${conf_tot} = ${breakdown}  |  Screened: ${screened}  (excess: ${breakdown - screened})`;
+      bar.className = 'balance-bar error';
+    } else {
+      bar.textContent =
+        `${sc_inc} included  +  ${sc_exc} excluded  +  ${conf_tot} conflicts  =  ${breakdown}`
+        + `   |   Screened: ${screened}`;
+      bar.className = 'balance-bar' + (
+        screened === 0         ? '' :
+        breakdown === screened ? ' ok' :
+        Math.abs(breakdown - screened) <= 3 ? ' warn' : ' error'
+      );
+    }
+  }
+
+  // Retrieval
+  const sought  = sc_inc + conf_inc;
+  sv('db_sought', sought);
+  const not_ret = clamp('db_not_retrieved', sought);
+  if (sought > 0 && not_ret > sought) {
+    setFieldWarn('db_not_retrieved', `Cannot exceed Records Sought (${sought})`);
+  } else {
+    setFieldWarn('db_not_retrieved', '');
+  }
+  sv('db_assessed', Math.max(0, sought - not_ret));
+  const db_assessed = gv('db_assessed');
+
+  // Full-text exclusions (dynamic reason rows)
+  let exc_ft = 0;
+  document.querySelectorAll('#reason-container .r-count').forEach(inp => {
+    exc_ft += parseInt(inp.value, 10) || 0;
+  });
+  sv('db_exc_reasons_total', exc_ft);
+  const excWarnEl = document.getElementById('db_exc_fulltext_warn');
+  if (excWarnEl) {
+    if (db_assessed > 0 && exc_ft > db_assessed) {
+      excWarnEl.textContent = `⚠ Sum of reasons (${exc_ft}) exceeds Records Assessed (${db_assessed})`;
+      excWarnEl.style.display = 'block';
+    } else {
+      excWarnEl.textContent = '';
+      excWarnEl.style.display = 'none';
+    }
+  }
+  sv('db_included', Math.max(0, db_assessed - exc_ft));
+
+  // ── Other Methods stream ───────────────────────────────────────────────
+  recalcOther();   // also updates total_included
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Database rows
+// ══════════════════════════════════════════════════════════════════════════
+function recalcDbSum() {
+  let sum = 0;
+  document.querySelectorAll('#db-container .d-count').forEach(inp => {
+    sum += parseInt(inp.value, 10) || 0;
+  });
+  sv('db_identified', sum);
+  const wrap = document.getElementById('wrap_db_identified');
+  if (wrap) { wrap.classList.add('flash'); setTimeout(() => wrap.classList.remove('flash'), 280); }
+  recalcAll();
+}
+
+function allDbFilled() {
+  for (const row of document.querySelectorAll('#db-container .db-row')) {
+    if (!row.querySelector('.d-name').value.trim()) return false;
+    if (row.querySelector('.d-count').value.trim() === '') return false;
+  }
+  return true;
+}
+function refreshDbBtn() {
+  const btn = document.getElementById('add-db-btn');
+  if (!btn) return;
+  const ok  = allDbFilled();
+  btn.disabled = !ok;
+  btn.title    = ok ? 'Add a database' : 'Fill in all existing rows first';
+}
+
+function tryAddDb() {
+  if (!allDbFilled()) {
+    document.querySelectorAll('#db-container .db-row').forEach(row => {
+      const n = row.querySelector('.d-name');
+      const c = row.querySelector('.d-count');
+      if (!n.value.trim()) { n.classList.add('invalid'); row.querySelector('.w-name').classList.add('show'); }
+      if (c.value.trim() === '') { c.classList.add('invalid'); row.querySelector('.w-count').classList.add('show'); }
+    });
+    const btn = document.getElementById('add-db-btn');
+    btn.style.transform = 'translateX(-4px)';
+    setTimeout(() => btn.style.transform = 'translateX(4px)',  80);
+    setTimeout(() => btn.style.transform = 'translateX(0)',   160);
+    return;
+  }
+  addDb();
+}
+
+function addDb(name = '', count = '') {
+  const container = document.getElementById('db-container');
+  const first     = container.children.length === 0;
+  const row       = document.createElement('div');
+  row.className   = 'db-row';
+  row.innerHTML   = `
+    <div class="form-group">
+      ${first ? '<label>Database Name</label>' : ''}
+      <input class="d-name" type="text" placeholder="e.g. Scopus" value="${name}" autocomplete="off"/>
+      <span class="field-warn w-name">⚠ Name is required</span>
+    </div>
+    <div class="form-group">
+      ${first ? '<label>Count</label>' : ''}
+      <input class="d-count" type="number" min="0" placeholder="0"
+             value="${count === '' ? '' : count}"/>
+      <span class="field-warn w-count">⚠ Count is required</span>
+    </div>
+    <button type="button" class="remove-btn" onclick="removeDb(this)" title="Remove">✕</button>
+  `;
+
+  const ni = row.querySelector('.d-name');
+  const ci = row.querySelector('.d-count');
+  ni.addEventListener('input', () => {
+    ni.classList.toggle('invalid', !ni.value.trim());
+    row.querySelector('.w-name').classList.toggle('show', !ni.value.trim());
+    refreshDbBtn();
+  });
+  ci.addEventListener('input', () => {
+    ci.classList.toggle('invalid', ci.value.trim() === '');
+    row.querySelector('.w-count').classList.toggle('show', ci.value.trim() === '');
+    recalcDbSum();   // recalcs totals
+    refreshDbBtn();  // ← FIX: re-evaluate button state after count changes
+  });
+  ni.addEventListener('focus', () => { ni.classList.remove('invalid'); refreshDbBtn(); });
+  ci.addEventListener('focus', () => { ci.classList.remove('invalid'); refreshDbBtn(); });
+
+  row.style.opacity = '0'; row.style.transform = 'translateY(-6px)';
+  row.style.transition = 'opacity 0.2s, transform 0.2s';
+  container.appendChild(row);
+  reindexDb();
+  requestAnimationFrame(() => { row.style.opacity = '1'; row.style.transform = 'translateY(0)'; });
+  if (!name) setTimeout(() => ni.focus(), 220);
+}
+
+function removeDb(btn) {
+  const row = btn.closest('.db-row');
+  row.style.transition = 'opacity 0.18s, transform 0.18s';
+  row.style.opacity = '0'; row.style.transform = 'translateX(10px)';
+  setTimeout(() => { row.remove(); reindexDb(); recalcDbSum(); }, 180);
+}
+
+function reindexDb() {
+  document.querySelectorAll('#db-container .db-row').forEach((row, i) => {
+    row.querySelector('.d-name').name  = `db${i+1}_name`;
+    row.querySelector('.d-count').name = `db${i+1}_count`;
+  });
+  const btns = document.querySelectorAll('#db-container .remove-btn');
+  btns.forEach(b => b.disabled = btns.length === 1);
+  refreshDbBtn();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Exclusion reason rows
+// ══════════════════════════════════════════════════════════════════════════
+function addReason(text = '', count = '') {
+  const container = document.getElementById('reason-container');
+  const first     = container.children.length === 0;
+  const row       = document.createElement('div');
+  row.className   = 'reason-row';
+  row.innerHTML   = `
+    <div class="form-group">
+      ${first ? '<label>Exclusion Reason</label>' : ''}
+      <input class="r-text" type="text" placeholder="e.g. Wrong population"
+             value="${text}" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      ${first ? '<label>n</label>' : ''}
+      <input class="r-count" type="number" min="0" placeholder="0"
+             value="${count === '' ? '' : count}"/>
+    </div>
+    <button type="button" class="remove-btn" onclick="removeReason(this)" title="Remove">✕</button>
+  `;
+  row.querySelector('.r-count').addEventListener('input', recalcAll);
+  row.style.opacity = '0'; row.style.transform = 'translateY(-6px)';
+  row.style.transition = 'opacity 0.2s, transform 0.2s';
+  container.appendChild(row);
+  reindexReasons();
+  requestAnimationFrame(() => { row.style.opacity = '1'; row.style.transform = 'translateY(0)'; });
+  if (!text) setTimeout(() => row.querySelector('.r-text').focus(), 220);
+}
+
+function removeReason(btn) {
+  const row = btn.closest('.reason-row');
+  row.style.transition = 'opacity 0.18s, transform 0.18s';
+  row.style.opacity = '0'; row.style.transform = 'translateX(10px)';
+  setTimeout(() => { row.remove(); reindexReasons(); recalcAll(); }, 180);
+}
+
+function reindexReasons() {
+  document.querySelectorAll('#reason-container .reason-row').forEach((row, i) => {
+    row.querySelector('.r-text').name  = `db_exc_reason${i+1}`;
+    row.querySelector('.r-count').name = `db_exc_reason${i+1}_n`;
+  });
+  const btns = document.querySelectorAll('#reason-container .remove-btn');
+  btns.forEach(b => b.disabled = btns.length === 1);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// Boot — seed from PREFILL if available, otherwise start empty
+// ══════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  if (PREFILL) {
+    // Simple editable fields
+    ['db_duplicates','db_automation_exc','db_other_exc',
+     'sc_included','sc_excluded','conflict_total',
+     'conflict_inc','db_not_retrieved',
+     'other_sought','other_not_retrieved','other_assessed',
+     'prev_included'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && PREFILL[id] !== undefined) el.value = PREFILL[id];
+    });
+
+    // Database rows
+    let di = 1;
+    while (PREFILL[`db${di}_name`] || PREFILL[`db${di}_count`]) {
+      addDb(PREFILL[`db${di}_name`] || '', PREFILL[`db${di}_count`] || '');
+      di++;
+    }
+
+    // DB full-text exclusion reason rows (dynamic)
+    let ri = 1;
+    while (PREFILL[`db_exc_reason${ri}`] || PREFILL[`db_exc_reason${ri}_n`]) {
+      addReason(PREFILL[`db_exc_reason${ri}`] || '', PREFILL[`db_exc_reason${ri}_n`] || '');
+      ri++;
+    }
+
+    // Other methods exclusion reasons (fixed 4 slots)
+    for (let i = 1; i <= 4; i++) {
+      const tEl = document.querySelector(`[name="other_exc_reason${i}"]`);
+      const nEl = document.querySelector(`[name="other_exc_reason${i}_n"]`);
+      if (tEl && PREFILL[`other_exc_reason${i}`]   !== undefined) tEl.value = PREFILL[`other_exc_reason${i}`];
+      if (nEl && PREFILL[`other_exc_reason${i}_n`] !== undefined) nEl.value = PREFILL[`other_exc_reason${i}_n`];
+    }
+
+    recalcDbSum();
+    recalcAll();
+  } else {
+    refreshDbBtn();
+    recalcAll();
+  }
+});
+</script>
+
+<script>
+// ── Style selection from Styles page ──────────────────────────────────────
+const THEMES = {
+  classic:    { name: "Classic Blue",    color: "#1a6fa0" },
+  academic:   { name: "Academic Square", color: "#111111" },
+  colorful:   { name: "Colorful Phases", color: "#1565c0" },
+  minimal:    { name: "Minimal Outline", color: "#555555" },
+  bold_navy:  { name: "Bold Navy",       color: "#1a3a6a" },
+  shadowed:   { name: "Shadowed Cards",  color: "#1a6fa0" },
+  green:      { name: "Forest Green",    color: "#0d5228" },
+  warm:       { name: "Warm Amber",      color: "#a84000" },
+  corporate:  { name: "Corporate",       color: "#1a2450" },
+  purple:     { name: "Royal Purple",    color: "#4a0a7a" },
+  teal:       { name: "Ocean Teal",      color: "#0a6060" },
+  orange_flow:{ name: "Orange Flow",     color: "#e8960c" },
+};
+
+(function applyStyleParam() {
+  const params = new URLSearchParams(window.location.search);
+  const style  = params.get('style');
+  if (!style || style === 'classic' || !THEMES[style]) return;
+
+  const th = THEMES[style];
+  document.getElementById('selected_style').value = style;
+
+  const banner = document.getElementById('style-banner');
+  banner.style.display     = '';
+  banner.style.borderColor = th.color;
+  banner.style.background  = th.color + '18';
+
+  document.getElementById('style-banner-name').textContent = th.name;
+  document.getElementById('style-swatch').style.background = th.color;
+
+  const btn = document.querySelector('.btn-generate');
+  if (btn) btn.style.background = `linear-gradient(135deg, ${th.color}, ${th.color}cc)`;
+})();
+</script>
+</body>
+</html>
