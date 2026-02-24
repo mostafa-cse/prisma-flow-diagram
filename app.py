@@ -13,18 +13,32 @@ import sqlite3
 import functools
 from datetime import datetime
 
-# On Vercel (read-only FS except /tmp) redirect matplotlib's config dir
-# MUST be set before importing matplotlib
-if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
-    os.makedirs("/tmp/matplotlib", exist_ok=True)
-    os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
+# matplotlib globals — populated lazily on first use to avoid crashing
+# the Vercel serverless function at cold-start import time.
+plt         = None
+mpatches    = None
+FancyBboxPatch = None
+PdfPages    = None
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import FancyBboxPatch
-from matplotlib.backends.backend_pdf import PdfPages
+def _setup_matplotlib():
+    """Import matplotlib and populate module-level stubs (once)."""
+    global plt, mpatches, FancyBboxPatch, PdfPages
+    if plt is not None:
+        return  # already imported
+    # On Vercel (read-only FS except /tmp) redirect matplotlib's config dir
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        os.makedirs("/tmp/matplotlib", exist_ok=True)
+        os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as _plt
+    import matplotlib.patches as _mpatches
+    from matplotlib.patches import FancyBboxPatch as _FancyBboxPatch
+    from matplotlib.backends.backend_pdf import PdfPages as _PdfPages
+    plt          = _plt
+    mpatches     = _mpatches
+    FancyBboxPatch = _FancyBboxPatch
+    PdfPages     = _PdfPages
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import (Flask, render_template, request, send_file,
@@ -304,6 +318,7 @@ def generate_diagram(d):
     Every text element uses the same Uniform Font Size (UFS = 8.0 × font_scale)
     so that no box appears to have larger or smaller text than any other.
     """
+    _setup_matplotlib()   # ensure matplotlib is imported before use
     # ── Style resolution ──────────────────────────────────────────────────────
     style_key = d.get("style", "classic")
     st  = DIAGRAM_STYLES.get(style_key, DIAGRAM_STYLES["classic"])
@@ -909,6 +924,7 @@ def gallery_img(filename):
 @app.route("/build-pdf")
 @login_required
 def build_pdf():
+    _setup_matplotlib()   # ensure matplotlib is imported before use
     paths = sorted(glob.glob(os.path.join(IMAGES_DIR, "*.png")) +
                    glob.glob(os.path.join(IMAGES_DIR, "*.jpg")) +
                    glob.glob(os.path.join(IMAGES_DIR, "*.jpeg")))
