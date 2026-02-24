@@ -1091,6 +1091,11 @@ def gen_style_img(filename):
 
 # ──────────────────────────────────────────────────────────────────────────────
 
+# Initialize DB on module load (Vercel cold start)
+init_db()
+
+# Vercel WSGI handler
+handler = app
+
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True, host="0.0.0.0", port=5000)
