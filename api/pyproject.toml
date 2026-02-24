@@ -1,0 +1,12 @@
+[project]
+name = "prisma-flow-diagram"
+version = "1.0.0"
+description = "PRISMA 2020 Flow Diagram Generator"
+requires-python = ">=3.12"
+dependencies = [
+    "flask",
+    "werkzeug",
+    "matplotlib",
+    "numpy",
+    "pillow",
+]
