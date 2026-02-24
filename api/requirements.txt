@@ -1,5 +1,1 @@
-Flask
-Werkzeug
-matplotlib
-numpy
-Pillow
+
