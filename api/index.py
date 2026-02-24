@@ -3,6 +3,7 @@ import os
 
 # Set Vercel environment flag BEFORE importing app
 os.environ['VERCEL'] = '1'
+os.makedirs('/tmp/matplotlib', exist_ok=True)
 os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
 
 # Add parent directory to path to import app

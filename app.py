@@ -13,11 +13,14 @@ import sqlite3
 import functools
 from datetime import datetime
 
+# On Vercel (read-only FS except /tmp) redirect matplotlib's config dir
+# MUST be set before importing matplotlib
+if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+    os.makedirs("/tmp/matplotlib", exist_ok=True)
+    os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
+
 import matplotlib
 matplotlib.use("Agg")
-# On Vercel (read-only FS except /tmp) redirect matplotlib's config dir
-if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
-    os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.patches import FancyBboxPatch
